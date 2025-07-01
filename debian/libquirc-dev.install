@@ -1,1 +1,2 @@
-lib/quirc.h usr/include/
+usr/include/quirc.h
+usr/lib/libquirc.a
