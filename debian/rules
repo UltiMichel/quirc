@@ -11,23 +11,19 @@ override_dh_auto_build:
 	$(MAKE) all v4l SDL_CFLAGS= SDL_LIBS=
 
 override_dh_auto_install:
-	# Install manually to avoid SDL demo dependencies
-	mkdir -p $(CURDIR)/debian/tmp/usr/include
+	# Install only the components we need without SDL dependencies
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib
+	mkdir -p $(CURDIR)/debian/tmp/usr/include
 	mkdir -p $(CURDIR)/debian/tmp/usr/bin
+	mkdir -p $(CURDIR)/debian/tmp/usr/lib/pkgconfig
 	
-	# Install library files
+	# Install library files directly to tmp, let dh_install handle distribution
 	install -m 0644 lib/quirc.h $(CURDIR)/debian/tmp/usr/include/
 	install -m 0644 libquirc.a $(CURDIR)/debian/tmp/usr/lib/
-	install -m 0755 libquirc.so.* $(CURDIR)/debian/tmp/usr/lib/
-	cd $(CURDIR)/debian/tmp/usr/lib && ln -sf libquirc.so.* libquirc.so
-	
-	# Install utilities
+	install -m 0755 libquirc.so.1.2 $(CURDIR)/debian/tmp/usr/lib/
+	ln -s libquirc.so.1.2 $(CURDIR)/debian/tmp/usr/lib/libquirc.so
 	install -m 0755 quirc-scanner $(CURDIR)/debian/tmp/usr/bin/
+	install -m 0644 quirc.pc $(CURDIR)/debian/tmp/usr/lib/pkgconfig/
 
 override_dh_auto_clean:
 	$(MAKE) clean
-
-override_dh_auto_test:
-	# Skip testing for cross-compilation builds
-	@echo "Skipping tests for cross-compilation"
