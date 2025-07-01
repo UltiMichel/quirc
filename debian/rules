@@ -1,0 +1,36 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CFLAGS_MAINT_APPEND = -Wall -pedantic
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) all v4l SDL_CFLAGS= SDL_LIBS=
+
+override_dh_auto_install:
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp PREFIX=/usr
+	# Create lib directory structure for proper package splitting
+	mkdir -p $(CURDIR)/debian/libquirc1/usr/lib
+	mkdir -p $(CURDIR)/debian/libquirc-dev/usr/lib
+	mkdir -p $(CURDIR)/debian/libquirc-dev/usr/include
+	mkdir -p $(CURDIR)/debian/quirc-utils/usr/bin
+	
+	# Move shared library to runtime package
+	mv $(CURDIR)/debian/tmp/usr/lib/libquirc.so* $(CURDIR)/debian/libquirc1/usr/lib/
+	
+	# Move development files to dev package
+	mv $(CURDIR)/debian/tmp/usr/lib/libquirc.a $(CURDIR)/debian/libquirc-dev/usr/lib/
+	mv $(CURDIR)/debian/tmp/usr/include/quirc.h $(CURDIR)/debian/libquirc-dev/usr/include/
+	
+	# Move utilities to utils package
+	mv $(CURDIR)/debian/tmp/usr/bin/* $(CURDIR)/debian/quirc-utils/usr/bin/
+
+override_dh_auto_clean:
+	$(MAKE) clean
+
+override_dh_auto_test:
+	# Run basic test if qrtest was built
+	if [ -x qrtest ]; then ./qrtest; fi
