@@ -2,7 +2,7 @@
 set -e
 
 # Quirc cross-compilation orchestrator script
-# Usage: ./run.sh [architecture]
+# Usage: ./build_for_ultimaker.sh [architecture]
 # Default architecture is arm64
 
 ARCH=${1:-arm64}
@@ -12,16 +12,13 @@ DOCKER_IMAGE="quirc-crossbuild:${ARCH}"
 echo "Starting cross-compilation for quirc (${ARCH})"
 
 # Validate architecture
-case ${ARCH} in
-    arm64|armhf)
-        echo "Building for supported architecture: ${ARCH}"
-        ;;
-    *)
-        echo "Unsupported architecture: ${ARCH}"
-        echo "Supported architectures: arm64, armhf"
-        exit 1
-        ;;
-esac
+if [[ ! "${ARCH}" =~ ^(arm64|armhf)$ ]]; then
+    echo "Unsupported architecture: ${ARCH}"
+    echo "Supported architectures: arm64, armhf"
+    exit 1
+fi
+
+echo "Building for supported architecture: ${ARCH}"
 
 # Create output directory
 echo "Creating output directory: ${BUILD_DIR}"
@@ -29,7 +26,7 @@ mkdir -p ${BUILD_DIR}
 
 # Build Docker image
 echo "Building Docker image for cross-compilation..."
-docker build -t ${DOCKER_IMAGE} .
+docker build -t ${DOCKER_IMAGE} --build-arg TARGET_ARCH=${ARCH} .
 
 # Run cross-compilation in Docker
 echo "Running cross-compilation in Docker container..."

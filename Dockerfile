@@ -1,11 +1,27 @@
 FROM debian:bookworm
 
-# Add ARM64 and ARMHF architectures
-RUN dpkg --add-architecture arm64 && \
-    dpkg --add-architecture armhf
+# Build argument for target architecture
+ARG TARGET_ARCH=arm64
+
+# Set cross-compilation variables based on architecture
+RUN case "${TARGET_ARCH}" in \
+        arm64) \
+            echo "CROSS_TRIPLE=aarch64-linux-gnu" > /etc/cross-compile-env; \
+            ;; \
+        armhf) \
+            echo "CROSS_TRIPLE=arm-linux-gnueabihf" > /etc/cross-compile-env; \
+            ;; \
+        *) \
+            echo "Unsupported architecture: ${TARGET_ARCH}" >&2; exit 1; \
+            ;; \
+    esac
+
+# Add target architecture
+RUN dpkg --add-architecture ${TARGET_ARCH}
 
 # Install base development tools and cross-compilation dependencies
-RUN apt-get update && apt-get install -y \
+RUN . /etc/cross-compile-env && \
+    apt-get update && apt-get install -y \
     build-essential \
     debhelper \
     devscripts \
@@ -13,16 +29,11 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libjpeg-dev \
     libpng-dev \
-    gcc-aarch64-linux-gnu \
-    g++-aarch64-linux-gnu \
-    gcc-arm-linux-gnueabihf \
-    g++-arm-linux-gnueabihf \
-    crossbuild-essential-arm64 \
-    crossbuild-essential-armhf \
-    libjpeg-dev:arm64 \
-    libjpeg-dev:armhf \
-    libpng-dev:arm64 \
-    libpng-dev:armhf \
+    gcc-${CROSS_TRIPLE} \
+    g++-${CROSS_TRIPLE} \
+    crossbuild-essential-${TARGET_ARCH} \
+    libjpeg-dev:${TARGET_ARCH} \
+    libpng-dev:${TARGET_ARCH} \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
